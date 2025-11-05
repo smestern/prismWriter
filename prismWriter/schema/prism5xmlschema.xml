@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+<Schema name="http://graphpad.com/prism/Prism.htm"
+		xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		xmlns="urn:schemas-microsoft-com:xml-data"
+        xmlns:dt="urn:schemas-microsoft-com:datatypes">
+	<description>
+		XML Schema for storing data and info tables from GraphPad Prism 5.0.
+		Copyright 1992-2009 GraphPad Software, Inc.
+	</description>
+
+	<ElementType name="BR" content="empty" model="closed" />
+	<ElementType name="br" content="empty" model="closed" />
+	<ElementType name="b" />
+	<ElementType name="B" />
+	<ElementType name="i" />
+	<ElementType name="I" />
+	<ElementType name="u" />
+	<ElementType name="U" />
+	<ElementType name="sup" />
+	<ElementType name="SUP" />
+	<ElementType name="sub" />
+	<ElementType name="SUB" />
+	<AttributeType name="Selected" dt:type="boolean"/>
+	<AttributeType name="Highlighted" dt:type="boolean"/>
+
+	<ElementType name="Font" model="open">
+		<AttributeType name="Face" />
+		<AttributeType name="Color" />
+		<AttributeType name="Size" dt:type="int" />
+		<attribute type="Face" />
+		<attribute type="Size" />
+		<attribute type="Color" />
+	</ElementType>
+
+	<AttributeType name="CreatedByProgram" />
+	<AttributeType name="CreatedByVersion" />
+	<AttributeType name="DateTime" dt:type="dateTime.tz" />
+	<AttributeType name="RegisteredTo" />
+	<AttributeType name="Login" />
+
+	<ElementType name="OriginalVersion" content="mixed" model="closed">
+		<attribute type="CreatedByProgram" />
+		<attribute type="CreatedByVersion" />
+		<attribute type="DateTime" />
+		<attribute type="RegisteredTo" />
+		<attribute type="Login" />
+	</ElementType>
+
+	<ElementType name="MostRecentVersion" content="mixed" model="closed">
+		<attribute type="CreatedByProgram" />
+		<attribute type="CreatedByVersion" />
+		<attribute type="DateTime" />
+		<attribute type="RegisteredTo" />
+		<attribute type="Login" />
+	</ElementType>
+
+	<ElementType name="Created" content="mixed" model="open">
+		<element type="OriginalVersion" maxOccurs="1" minOccurs="1"/>
+		<element type="MostRecentVersion" maxOccurs="1" minOccurs="0"/>
+	</ElementType>
+
+	<ElementType name="HelpTopic" content="mixed" model="open">
+		<AttributeType name="TopicID" dt:type="int"/>
+		<AttributeType name="TopicName" />
+		<attribute type="TopicID" required = "no" />
+		<attribute type="TopicName" required = "no" />
+	</ElementType>
+
+	<ElementType name="DefGraphButton" model="open">
+		<AttributeType name="ButtonID" dt:type="int"/>
+		<attribute type="ButtonID" required = "no" />
+	</ElementType>
+
+	<AttributeType name="ID" dt:type="id" />
+	
+	<ElementType name="WebLink" content = "mixed" model="closed">
+		<AttributeType name="ToolTip"/>
+		<AttributeType name="URL"/>
+		<AttributeType name="Flags" dt:type="int"/>
+		<attribute type="ToolTip" required="no"/>
+		<attribute type="URL" required = "yes"/>
+		<attribute type="Flags" default = "0" required="no"/>
+	</ElementType> 		
+
+	<ElementType name="FloatingNote" content="mixed" model="open">
+		<AttributeType name="Color" dt:type="enumeration" dt:values="Yellow Red Blue Green Purple Orange" />
+		<AttributeType name="Left" dt:type="int" />
+		<AttributeType name="Top" dt:type="int" />
+		<AttributeType name="Width" dt:type="int" />
+		<AttributeType name="Height" dt:type="int" />
+		<attribute type="ID" required="no" />
+		<attribute type="Left" />
+		<attribute type="Top" />
+		<attribute type="Width" />
+		<attribute type="Height" />
+		<attribute type="Color" />
+		<element type="WebLink" minOccurs="0" maxOccurs="*" />
+	</ElementType>
+
+	<ElementType name="Ref" content="empty" model="closed">
+		<AttributeType name="ID" dt:type="idref" />
+		<attribute type="ID" />
+		<attribute type="Selected" />
+	</ElementType>
+
+	<AttributeType name="FileName" />
+	
+	<ElementType name="InfoSequence" content="eltOnly" model="closed">
+		<attribute type="Selected" />
+		<element type="Ref" maxOccurs="*" minOccurs="0"/>
+	</ElementType>
+
+	<ElementType name="TableSequence" content="eltOnly" model="closed">
+		<attribute type="Selected" />
+		<element type="Ref" maxOccurs="*" minOccurs="0" />
+	</ElementType>
+
+	<ElementType name="Title" content="mixed" model="open" />
+	<ElementType name="Name" content="mixed" model="open" />
+	<ElementType name="Value" content="mixed" model="open" />
+	<ElementType name="Notes" content="mixed" model="open" />
+
+	<ElementType name="Constant" content="eltOnly" model="closed">
+		<element type="Name" maxOccurs="1" minOccurs="1" />
+		<element type="Value" maxOccurs="1" minOccurs="0" />
+	</ElementType>
+
+	<ElementType name="Info" content="eltOnly" model="closed" order="many">
+		<attribute type="ID" />
+		<attribute type="Icon" />
+		<attribute type="Highlighted" />
+		<element type="Title" maxOccurs="1" minOccurs="0" />
+		<element type="Notes" maxOccurs="1" minOccurs="0" />
+		<element type="Constant" maxOccurs="*" minOccurs="0" />
+		<element type="FloatingNote" maxOccurs="*" minOccurs="0" />
+	</ElementType>
+
+	<AttributeType name="Width" />
+	<AttributeType name="Decimals" />
+	<AttributeType name="Subcolumns" />
+	<AttributeType name="XFormat" dt:type="enumeration" dt:values="none text numbers error series" />
+	<AttributeType name="YFormat" dt:type="enumeration" dt:values="replicates SD SE CV SDN SEN CVN low-high text upper-lower-limits" />
+	<AttributeType name="Replicates" dt:type="int" />
+	<AttributeType name="StartAt" />
+	<AttributeType name="Interval" />
+	<AttributeType name="Icon" />
+	<AttributeType name="TableType" dt:type="enumeration" dt:values="Result Legacy XY OneWay TwoWay Contingency Survival" required="no"/>	
+
+	<AttributeType name="Excluded" dt:type="boolean"/>
+	<AttributeType name="Scientific" dt:type="boolean"/>
+
+	<ElementType name="d" content="mixed" model="open">
+		<attribute type="Excluded" default="0" />
+	</ElementType>
+
+	<ElementType name="Subcolumn" content="eltOnly" model="closed">
+		<element type="Title" maxOccurs="1" minOccurs="0" />
+		<element type="d" maxOccurs="*" minOccurs="0" />
+	</ElementType>
+
+	<ElementType name="RowTitlesColumn" content="eltOnly" model="closed">
+		<attribute type="Width" />
+		<element type="Subcolumn" maxOccurs="1" minOccurs="0" />
+	</ElementType>
+
+	<ElementType name="XColumn" content="eltOnly" model="closed">
+		<attribute type="Width" />
+		<attribute type="Decimals" />
+		<attribute type="Subcolumns" />
+		<attribute type="Scientific" />
+		<element type="Title" maxOccurs="1" minOccurs="0" />
+		<element type="Subcolumn" maxOccurs="*" minOccurs="0" />
+	</ElementType>
+
+
+	<ElementType name="YColumn" content="eltOnly" model="closed">
+		<attribute type="Width" />
+		<attribute type="Decimals" />
+		<attribute type="Subcolumns" />
+		<attribute type="Scientific" />
+		<element type="Title" maxOccurs="1" minOccurs="0" />
+		<element type="Subcolumn" maxOccurs="*" minOccurs="0" />
+	</ElementType>
+
+	<ElementType name="Table" content="eltOnly" model="closed" order="many">
+		<attribute type="ID" />
+		<attribute type="XFormat" />
+		<attribute type="YFormat" />
+		<attribute type="Replicates" />
+		<attribute type="StartAt" />
+		<attribute type="Interval" />
+		<attribute type="Icon" />
+		<attribute type="Highlighted" />
+		<attribute type="TableType" />
+		<element type="Title" maxOccurs="1" minOccurs="0" />
+		<element type="Info" maxOccurs="*" minOccurs="0" />
+		<element type="RowTitlesColumn" maxOccurs="1" minOccurs="0" />
+		<element type="XColumn" maxOccurs="1" minOccurs="0" />
+		<element type="YColumn" maxOccurs="*" minOccurs="0" />
+		<element type="FloatingNote" maxOccurs="*" minOccurs="0" />
+	</ElementType>
+
+	<ElementType name="Script"  content="textOnly" model="closed">
+		<AttributeType name="RunOnFileOpen" dt:type="enumeration" dt:values="0 no false 1 yes true"/>
+		<AttributeType name="RunOnFileClose" dt:type="enumeration" dt:values="0 no false 1 yes true"/>
+		<AttributeType name="Name"/>
+		<attribute type="Name" required="yes"/>
+		<attribute type="RunOnFileOpen" required="no" default="no"/>
+		<attribute type="RunOnFileClose" required="no" default="no"/>
+	</ElementType>
+
+	<ElementType name="Template"  content="textOnly" dt:type="bin.base64">
+		<attribute type="FileName" />
+	</ElementType>
+
+	<AttributeType name="CreatedByPrismVersion" />
+	<AttributeType name="LowestVersionThatCanOpen" />
+	<AttributeType name="PrismXMLVersion" />
+
+	<ElementType name="GraphPadPrismFile" content="eltOnly" model="closed" order="many">
+		<attribute type="CreatedByPrismVersion" required="no" />
+		<attribute type="LowestVersionThatCanOpen" required="no" />
+		<attribute type="PrismXMLVersion" required="yes" />
+
+		<element type="Created" maxOccurs="1" minOccurs="0" />
+		<element type="HelpTopic" maxOccurs="1" minOccurs="0" />
+		<element type="DefGraphButton" maxOccurs="1" minOccurs="0" />
+		<element type="InfoSequence" maxOccurs="1" minOccurs="0" />
+		<element type="TableSequence" maxOccurs="1" minOccurs="0" />
+		<element type="Title" maxOccurs="1" minOccurs="0" />
+		<element type="Info" maxOccurs="*" minOccurs="0" />
+		<element type="Table" maxOccurs="*" minOccurs="0" />
+		<element type="Script" maxOccurs="*" minOccurs="0" />
+		<element type="Template" maxOccurs="1" minOccurs="0" />
+
+	</ElementType>
+
+</Schema>
