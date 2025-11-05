@@ -897,8 +897,9 @@ def main():
     
     # Create and show GUI
     window = PrismWriterGUI()
-    
+    window.show()
     app.exec_()
+    
 
 
 if __name__ == '__main__':
