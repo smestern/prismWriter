@@ -28,6 +28,7 @@ dependencies = [
     "pandas",
     "PySide2",
     "openpyxl",  # For Excel support
+    "streamlit>=1.28.0",  # For web interface
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,7 @@ dev = [
 
 [project.scripts]
 prismwriter-gui = "prismWriter.gui:main"
+prismwriter-web = "prismWriter.streamlit_app:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/prismWriter"

@@ -429,6 +429,20 @@ class PrismFile():
         df = df.pivot_table(index='row', columns=['ycol', 'subycol'], values='data_point')
         return df
 
+    def get_table_names(self):
+        """Get list of all table names in the Prism file
+        
+        Returns:
+            list: List of table name strings
+        """
+        tables = self.main_file.findall('{http://graphpad.com/prism/Prism.htm}Table', ns)
+        table_names = []
+        for table in tables:
+            table_id = table.get('ID')
+            if table_id:
+                table_names.append(table_id)
+        return table_names
+
     def write(self, file_path, xml_declaration=True, encoding='utf-8', method="xml", default_namespace="", pretty_print=True):
         logging.info(f"Writing to {file_path}")
         if pretty_print:
