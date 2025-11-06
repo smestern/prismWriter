@@ -13,13 +13,13 @@ from prismWriter.prism_writer import PrismFile, load_prism_file
 # Page configuration
 st.set_page_config(
     page_title="prismWriter - Web Interface",
-    page_icon="📊",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # Title and description
-st.title("📊 prismWriter - Web Interface")
+st.title("prismWriter - Web Interface")
 st.markdown("""
 Convert your CSV/Excel data into GraphPad Prism format (`.pzfx`) files with customizable grouping.
 """)
@@ -32,7 +32,7 @@ if 'prism_file' not in st.session_state:
 
 # Sidebar - File Upload
 with st.sidebar:
-    st.header("📁 Data Input")
+    st.header("Data Input")
     
     # Option 1: Upload file
     uploaded_file = st.file_uploader(
@@ -57,9 +57,9 @@ if uploaded_file is not None:
             st.session_state.df = pd.read_csv(uploaded_file)
         else:
             st.session_state.df = pd.read_excel(uploaded_file)
-        st.success(f"✅ Loaded {uploaded_file.name} - {len(st.session_state.df)} rows")
+        st.success(f"Loaded {uploaded_file.name} - {len(st.session_state.df)} rows")
     except Exception as e:
-        st.error(f"❌ Error loading file: {str(e)}")
+        st.error(f"Error loading file: {str(e)}")
 
 if prism_upload is not None:
     try:
@@ -69,19 +69,19 @@ if prism_upload is not None:
             tmp_path = tmp.name
         
         st.session_state.prism_file = load_prism_file(tmp_path, backup=False)
-        st.success(f"✅ Loaded Prism file: {prism_upload.name}")
+        st.success(f"Loaded Prism file: {prism_upload.name}")
         
         # Clean up temp file
         os.unlink(tmp_path)
     except Exception as e:
-        st.error(f"❌ Error loading Prism file: {str(e)}")
+        st.error(f"Error loading Prism file: {str(e)}")
 
 # Main content area
 if st.session_state.df is not None:
     df = st.session_state.df
     
     # Show data preview
-    st.subheader("📋 Data Preview")
+    st.subheader("Data Preview")
     st.dataframe(df.head(20), use_container_width=True)
     
     # Column type detection
@@ -89,14 +89,14 @@ if st.session_state.df is not None:
     categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
     
     st.markdown("---")
-    st.subheader("🔧 Configure Prism Table")
+    st.subheader("Configure Prism Table")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("**Column Types Detected:**")
-        st.write(f"📊 Numeric columns: {len(numeric_cols)}")
-        st.write(f"🏷️ Categorical columns: {len(categorical_cols)}")
+        st.write(f"Numeric columns: {len(numeric_cols)}")
+        st.write(f"Categorical columns: {len(categorical_cols)}")
     
     with col2:
         table_name = st.text_input(
@@ -181,15 +181,15 @@ if st.session_state.df is not None:
     col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
-        preview_btn = st.button("🔍 Preview Table", use_container_width=True)
+        preview_btn = st.button("Preview Table", use_container_width=True)
     
     with col2:
-        generate_btn = st.button("✨ Generate Prism File", type="primary", use_container_width=True)
+        generate_btn = st.button("Generate Prism File", type="primary", use_container_width=True)
     
     # Preview functionality
     if preview_btn:
         if not data_cols:
-            st.warning("⚠️ Please select at least one data column")
+            st.warning("Please select at least one data column")
         else:
             try:
                 with st.spinner("Generating preview..."):
@@ -217,19 +217,19 @@ if st.session_state.df is not None:
                     # Convert back to dataframe for preview
                     preview_df = temp_prism.to_dataframe(f"__{table_name}")
                     
-                    st.success("✅ Preview generated successfully!")
+                    st.success("Preview generated successfully!")
                     st.dataframe(preview_df, use_container_width=True)
                     
-                    st.info(f"📊 Preview dimensions: {preview_df.shape[0]} rows × {preview_df.shape[1]} columns")
+                    st.info(f"Preview dimensions: {preview_df.shape[0]} rows × {preview_df.shape[1]} columns")
                     
             except Exception as e:
-                st.error(f"❌ Error generating preview: {str(e)}")
+                st.error(f"Error generating preview: {str(e)}")
                 st.exception(e)
     
     # Generate file
     if generate_btn:
         if not data_cols:
-            st.warning("⚠️ Please select at least one data column")
+            st.warning("Please select at least one data column")
         else:
             try:
                 with st.spinner("Generating Prism file..."):
@@ -261,11 +261,11 @@ if st.session_state.df is not None:
                     os.unlink(tmp_path)
                     output.seek(0)
                     
-                    st.success("✅ Prism file generated successfully!")
+                    st.success("Prism file generated successfully!")
                     
                     # Download button
                     st.download_button(
-                        label="⬇️ Download Prism File",
+                        label="Download Prism File",
                         data=output,
                         file_name=f"{table_name}.pzfx",
                         mime="application/octet-stream",
@@ -273,12 +273,12 @@ if st.session_state.df is not None:
                     )
                     
             except Exception as e:
-                st.error(f"❌ Error generating Prism file: {str(e)}")
+                st.error(f"Error generating Prism file: {str(e)}")
                 st.exception(e)
 
 elif st.session_state.prism_file is not None:
     # Show existing Prism file tables
-    st.subheader("📊 Prism File Tables")
+    st.subheader("Prism File Tables")
     
     prism = st.session_state.prism_file
     table_names = prism.get_table_names()
@@ -292,13 +292,13 @@ elif st.session_state.prism_file is not None:
             table_df = prism.to_dataframe(selected_table)
             st.dataframe(table_df, use_container_width=True)
             
-            st.info(f"📊 Table dimensions: {table_df.shape[0]} rows × {table_df.shape[1]} columns")
+            st.info(f"Table dimensions: {table_df.shape[0]} rows × {table_df.shape[1]} columns")
         except Exception as e:
             st.error(f"Error loading table: {str(e)}")
 
 else:
     # Welcome screen
-    st.info("👈 Upload a CSV/Excel file or an existing Prism file to get started")
+    st.info("Upload a CSV/Excel file or an existing Prism file to get started")
     
     st.markdown("""
     ### Quick Start Guide
@@ -313,10 +313,10 @@ else:
     5. **Generate and download** your `.pzfx` file
     
     ### Tips
-    - 📊 Numeric columns are automatically detected for data
-    - 🏷️ Categorical columns are used for grouping
-    - 👁️ Use Preview to verify the table structure
-    - 💾 Generated files can be opened directly in GraphPad Prism
+    - Numeric columns are automatically detected for data
+    - Categorical columns are used for grouping
+    - Use Preview to verify the table structure
+    - Generated files can be opened directly in GraphPad Prism
     """)
 
 # Footer

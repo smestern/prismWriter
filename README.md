@@ -4,11 +4,11 @@ Python library and GUI for programmatically creating and manipulating GraphPad P
 
 ## Features
 
-- 📊 Convert pandas DataFrames to GraphPad Prism format
-- 🔧 Flexible grouping: main groups, sub-columns, row labels
-- 💻 Multiple interfaces: Python API, Qt GUI, and Web interface
-- 📁 Load and modify existing `.pzfx` files
-- ✅ Validate table structure with preview functionality
+- Convert pandas DataFrames to GraphPad Prism format
+- Flexible grouping: main groups, sub-columns, row labels
+- Multiple interfaces: Python API, Qt GUI, and Web interface
+- Load and modify existing `.pzfx` files
+- Validate table structure with preview functionality
 
 ## Installation
 
@@ -25,7 +25,7 @@ from prismWriter.prism_writer import PrismFile
 import pandas as pd
 
 # Create a PrismFile
-pf = PrismFile()
+pf = PrismFile()**
 
 # Load your data
 df = pd.read_csv('data.csv')
@@ -56,13 +56,11 @@ Or use the provided launch scripts:
 - **Windows (CMD)**: `run_web.bat`
 
 Features:
-- 📁 Upload CSV/Excel files
-- 🔍 Live data preview
-- 🎛️ Interactive configuration
-- 👁️ Preview table structure
-- ⬇️ Direct download
-
-See [STREAMLIT_README.md](STREAMLIT_README.md) for detailed web interface documentation.
+- Upload CSV/Excel files
+- Live data preview
+- Interactive configuration
+- Preview table structure
+- Direct download
 
 ### Qt GUI
 
