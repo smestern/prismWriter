@@ -71,17 +71,21 @@ for table in table_templates:
     template_dict[title] = table
 
 class PrismFile():
-    def __init__(self) -> None:
+    def __init__(self, file=None) -> None:
 
-        self.template_file = copy.deepcopy(template_file)
-        #clear the contents of the template
-        if self.template_file is not None:
-            self.main_file =self.clear_template_contents()
+        if file is not None:
+            self.main_file = load_prism_file(file, backup=True)
+            return
+        else:
+            self.template_file = copy.deepcopy(template_file)
+            #clear the contents of the template
+            if self.template_file is not None:
+                self.main_file = self._clear_template_contents()
 
         self._internal_table_map = {} #this is a map of table names to their ycolumns, used for quick access
 
 
-    def clear_template_contents(self):
+    def _clear_template_contents(self):
         #first clear the table sequence
         table_sequence = self.template_file.findall('{http://graphpad.com/prism/Prism.htm}TableSequence', ns)[0]
         #clear all its children
@@ -97,6 +101,18 @@ class PrismFile():
         self.template_file.getroot().remove(template_field)
 
         return self.template_file
+    
+    def load(self, file_path):
+        """ Load a prism file into the PrismFile object """
+        logger.info(f"Loading prism file from {file_path}")
+        self.main_file = load_prism_file(file_path, backup=True)
+        self._internal_table_map = {}
+        table_names = self.main_file.findall('{http://graphpad.com/prism/Prism.htm}Table', ns)
+        for table in table_names:
+            title = table.find('{http://graphpad.com/prism/Prism.htm}Title', ns).text
+            self._internal_table_map[title] = table
+
+        return self.main_file
 
     def make_group_table(self, group_name, group_values, groupby=None, cols=None, subgroupcols=None,
                           subgroupby=None, rowgroupcols=None, rowgroupby=None, append=True):
@@ -431,7 +447,6 @@ class PrismFile():
 
     def get_table_names(self):
         """Get list of all table names in the Prism file
-        
         Returns:
             list: List of table name strings
         """

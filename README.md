@@ -52,7 +52,6 @@ streamlit run prismWriter/streamlit_app.py
 ```
 
 Or use the provided launch scripts:
-- **Windows (PowerShell)**: `.\run_web.ps1`
 - **Windows (CMD)**: `run_web.bat`
 
 Features:

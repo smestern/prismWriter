@@ -91,5 +91,13 @@ def test_prism_writer():
     #and can be opened in PRISM
     os.path.exists('test.pzfx') #True
 
+
+def test_prism_read():
+    file = PrismFile()
+    file.load('test.pzfx')
+    df = file.to_dataframe('test_group')
+    print(df.head(15))
+
 if __name__ == '__main__':
     test_prism_writer()
+    test_prism_read()
