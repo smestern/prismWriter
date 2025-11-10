@@ -73,14 +73,14 @@ def test_prism_writer():
     rowgroupcols = ['Sweep 001 spike count', 'Sweep 002 spike count', 'Sweep 003 spike count', 'Sweep 004 spike count', 'Sweep 005 spike count', 'Sweep 006 spike count', 'Sweep 007 spike count', 'Sweep 008 spike count', 
                     'Sweep 009 spike count', 'Sweep 010 spike count', 'Sweep 011 spike count', 'Sweep 012 spike count', 'Sweep 013 spike count', 'Sweep 014 spike count', 'Sweep 015 spike count']
     #make a group table
-    out = file.make_group_table('test_group', test_df, groupby="foldername", rowgroupcols=rowgroupcols)
+    out = file.make_group_table('test_group', test_df, groupby="Group", rowgroupcols=rowgroupcols, subgroupby="filename")
     
     #convert to dataframe
     df = file.to_dataframe('test_group')
     print(df.head(15))
 
     #try a 1way rowcols
-    out = file.make_group_table('1way_rowcols', test_df, cols='mean_current', groupby="foldername",)
+    out = file.make_group_table('1way_rowcols', test_df, cols='mean_current', groupby="Group",subgroupby="filename")
     df_1way_rowcols = file.to_dataframe('1way_rowcols')
     print(df_1way_rowcols.head(15))
 
@@ -94,10 +94,11 @@ def test_prism_writer():
 
 def test_prism_read():
     file = PrismFile()
-    file.load('test.pzfx')
+    file.load('test.pzfx',backup=False)
     df = file.to_dataframe('test_group')
     print(df.head(15))
+    df.to_csv('test_prism_read_output.csv')
 
 if __name__ == '__main__':
-    test_prism_writer()
+    #test_prism_writer()
     test_prism_read()

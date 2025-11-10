@@ -71,6 +71,14 @@ for table in table_templates:
     template_dict[title] = table
 
 class PrismFile():
+    """ Class for handling prism files 
+    Takes:
+        file: str, path to prism file. If None, a new prism file is created
+
+    Attributes:
+        main_file: ET.ElementTree, the main prism file
+        template_file: ET.ElementTree, the template prism file
+    """
     def __init__(self, file=None) -> None:
 
         if file is not None:
@@ -102,16 +110,11 @@ class PrismFile():
 
         return self.template_file
     
-    def load(self, file_path):
+    def load(self, file_path, backup=True):
         """ Load a prism file into the PrismFile object """
         logger.info(f"Loading prism file from {file_path}")
-        self.main_file = load_prism_file(file_path, backup=True)
-        self._internal_table_map = {}
-        table_names = self.main_file.findall('{http://graphpad.com/prism/Prism.htm}Table', ns)
-        for table in table_names:
-            title = table.find('{http://graphpad.com/prism/Prism.htm}Title', ns).text
-            self._internal_table_map[title] = table
-
+        self.main_file = load_prism_file(file_path, backup=backup)
+        self.build_internal_table_map()
         return self.main_file
 
     def make_group_table(self, group_name, group_values, groupby=None, cols=None, subgroupcols=None,
@@ -232,21 +235,25 @@ class PrismFile():
                 num_rows = len(rowgroupcols)
                 name_rows = rowgroupcols
                 rowgroupby_func = 'col'
+                seq_rows = False #not sequential
                 logging.info(f"Grouping rows by columns: {rowgroupcols}")
             else:
                 rowgroupby_func = 'row'
                 name_rows = None #[f"Row {i}" for i in range(raveled_data_no_groupby.shape[0])]
                 num_rows = raveled_data_no_groupby.shape[0] #this is the number of rows
+                seq_rows = True
+                seq_rows_counter = {}
                 logging.info(f"Rows placed sequentially")
         elif isinstance(rowgroupby, str):
             raveled_data[rowgroupby] = raveled_data[rowgroupby].astype(str)
             num_rows = raveled_data[rowgroupby].unique().shape[0]
             name_rows = raveled_data[rowgroupby].unique().astype(str)
             rowgroupby_func = rowgroupby
+            seq_rows = False#not sequential
             logging.info(f"Grouping rows by labels: {rowgroupby}")
             logging.info(f'num_rows: {num_rows}, name_rows: {name_rows}')
         else:  
-            raise ValueError('rowgroupby must be None, a string')
+            raise ValueError('Something went wrong with rowgroupby')
 
         #get the number of groups
         idxs_per_group = raveled_data.groupby([groupby, subgroupby_func, rowgroupby_func]).groups #this is the index of the subcolumns
@@ -327,7 +334,16 @@ class PrismFile():
                 data_point = group_str_template['data_point'].replace('DATA_POINT', str(data_point))
                 data_point = ET.fromstring(data_point)
                 #track down the subcolumn and row
-                subyrow_key = f"{subycol}_{row}" #this is the key for the subyrowmap
+                #if rows are sequential, then we need to track the row index
+                if seq_rows:
+                    if f"{ycol}_{subycol}" not in seq_rows_counter:
+                        seq_rows_counter[f"{ycol}_{subycol}"] = 0
+                    row_idx = seq_rows_counter[f"{ycol}_{subycol}"]
+                    seq_rows_counter[f"{ycol}_{subycol}"] += 1
+                    _row = row_idx
+                else:
+                    _row = row
+                subyrow_key = f"{subycol}_{_row}" #this is the key for the subyrowmap
                 if subyrow_key in ycols_map[ycol]['subyrowmap']:
                     #remove the empty data point
                     #ycols_map[ycol]['subyrowmap'][subyrow_key].clear()
@@ -368,8 +384,6 @@ class PrismFile():
         for ycolumn in ycols_map.values():
             new_table.append(ycolumn['object'])
         
-
-
         #close the table
         #add it to the TableSequence
         if append:
@@ -437,7 +451,7 @@ class PrismFile():
                         'ycol': ycolumn,
                         'subycol': subcolumn,
                         'row': row_name,
-                        'data_point': data_point.text
+                        'data_point': data_point.text if isinstance(data_point, ET.Element) else data_point
                     })
 
         #convert to dataframe
@@ -457,6 +471,41 @@ class PrismFile():
             if table_id:
                 table_names.append(table_id)
         return table_names
+    
+    def build_internal_table_map(self):
+        """ Build an internal map of table names to their ycolumns for quick access """
+        self._internal_table_map = {}
+        table_names = self.main_file.findall('{http://graphpad.com/prism/Prism.htm}Table', ns)
+        for table in table_names:
+            title = table.find('{http://graphpad.com/prism/Prism.htm}Title', ns).text
+            self._internal_table_map[title] = self.parse_table(table)
+        return self._internal_table_map
+    
+    def parse_table(self, table):
+        """ Parse a table and return its structure as a nested dictionary """
+        
+        table_dict = {'ycols': {}}
+        ycolumns = table.findall('{http://graphpad.com/prism/Prism.htm}YColumn', ns)
+        rows = table.findall('{http://graphpad.com/prism/Prism.htm}RowTitlesColumn', ns)
+        if rows:
+            row_subcolumns = rows[0].findall('{http://graphpad.com/prism/Prism.htm}Subcolumn', ns)
+            row_titles = []
+            for subcolumn in row_subcolumns:
+                data_points = subcolumn.findall('{http://graphpad.com/prism/Prism.htm}d', ns)
+                for data_point in data_points:
+                    row_titles.append(data_point.text)
+            table_dict['row_list'] = row_titles
+        for ycolumn in ycolumns:
+            ycol_title = ycolumn.find('{http://graphpad.com/prism/Prism.htm}Title', ns).text
+            table_dict['ycols'][ycol_title] = {'subymap': {}, 'object': ycolumn}
+            subcolumns = ycolumn.findall('{http://graphpad.com/prism/Prism.htm}Subcolumn', ns)
+            for subcolumn in subcolumns:
+                subcol_data = []
+                data_points = subcolumn.findall('{http://graphpad.com/prism/Prism.htm}d', ns)
+                for data_point in data_points:
+                    subcol_data.append(data_point.text)
+                table_dict['ycols'][ycol_title]['subymap'][len(table_dict['ycols'][ycol_title]['subymap'])] = subcol_data
+        return table_dict
 
     def write(self, file_path, xml_declaration=True, encoding='utf-8', method="xml", default_namespace="", pretty_print=True):
         logging.info(f"Writing to {file_path}")
