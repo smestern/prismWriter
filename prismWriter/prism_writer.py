@@ -117,8 +117,8 @@ class PrismFile():
         self.build_internal_table_map()
         return self.main_file
 
-    def make_group_table(self, group_name, group_values, groupby=None, cols=None, subgroupcols=None,
-                          subgroupby=None, rowgroupcols=None, rowgroupby=None, append=True):
+    def make_group_table(self, group_name, group_values, groupby=None, cols=None, 
+                          subgroupby=None, rowgroupby=None, append=True):
         """ Create a prism "grouped" table from a pandas dataframe. This table has the following structure:
             | Groupby1     | Groupby2    | Groupby3    | Groupby4    | Groupby5    |
             | sub1 |  sub2 | sub1 | sub2 | sub1 | sub2 | sub1 | sub2 | sub1 | sub2 |
@@ -131,42 +131,30 @@ class PrismFile():
                 group_name: str, the name of the group
                 group_values: pd.DataFrame, the data to be grouped
                 groupby: str, the column to group by
-                cols: list of strs, the columns to be used as 'data', if None, then all columns are used. Does not need to include subgroupby or rowgroupby columns
-                subgroupcols: list of strs, If list of str, these are assumed to be the col names from the group_values dataframe to be used as subcolumns in the table
-                subgroupby: str, the column to subgroup by.
+                cols: list of strs, the columns to be used as 'data', if None, then all columns are used. Does not need to include subgroup or rowgroup columns
+                subgroupby: str or list of strs; If a str, this is assumed to be a catagorical variable to group by \
+                      If list of str, these are assumed to be the col names from the group_values dataframe to be used as subcolumns in the table
                 rowgroupcols: list of strs, If list of str, these are assumed to be the col names from the group_values dataframe to be used as rowgroups in the table
                 rowgroupby: str, the column to rowgroup by.
         """
 
         #first drop the groupby column
         group_values_no_groupby = group_values.drop(groupby, axis=1) if groupby is not None else group_values
-        group_values_no_groupby = group_values_no_groupby.drop(subgroupby, axis=1) if subgroupby is not None else group_values_no_groupby
-        group_values_no_groupby = group_values_no_groupby.drop(rowgroupby, axis=1) if rowgroupby is not None else group_values_no_groupby
+        group_values_no_groupby = group_values_no_groupby.drop(subgroupby, axis=1) if subgroupby is not None and len(subgroupby) < 1 else group_values_no_groupby
+        group_values_no_groupby = group_values_no_groupby.drop(rowgroupby, axis=1) if rowgroupby is not None and len(rowgroupby) < 1 else group_values_no_groupby
         
-        #easiest way is to brute force ravel the data, the data is a 1d array of the data points, then seperate columns
-        #grab the data columns 
-        logging.info(f"Grouping data by {groupby}, {subgroupby}, {rowgroupby}")
-        data_cols = [x for x in (cols, subgroupcols, rowgroupcols) if x is not None]
-        if len(data_cols) == 0:
-            #the datacolumns will be all the columns that are not groupby, subgroupby, or rowgroupby
-            data_cols = group_values_no_groupby.columns
+        #easiest way is to use melt to ravel the data
+        if cols is None:
+            id_vars = [x for x in [groupby, subgroupby, rowgroupby] if x is not None and not isinstance(x, list)]
+            value_vars = np.ravel([x for x in [subgroupby, rowgroupby] if x is not None and isinstance(x, list)]).tolist()
+            if len(value_vars) == 0: #if 
+                value_vars = group_values_no_groupby.columns.tolist()
+            raveled_data = group_values.melt(id_vars=id_vars, value_vars=value_vars, value_name='data_point')
+            raveled_data_no_groupby = group_values_no_groupby.melt(value_vars=value_vars, value_name='data_point')
         else:
-            data_cols = np.hstack(data_cols)
-        raveled_data = []
-        logging.info(f"Raveling data...")
-        for i, row in group_values.iterrows():
-            for col in data_cols:
-                data_point = row[col]
-                temp_dict = {'row': i, 'col': col, 'data_point': data_point}
-                #add in the remaining columns
-                for col in group_values.columns:
-                    if col not in data_cols:
-                        temp_dict[col] = row[col]
-                raveled_data.append(temp_dict)
-        raveled_data = pd.DataFrame(raveled_data)
-        raveled_data_no_groupby = raveled_data.drop(groupby, axis=1) if groupby is not None else raveled_data
-        raveled_data_no_groupby = raveled_data_no_groupby.drop(subgroupby, axis=1) if subgroupby is not None else raveled_data_no_groupby
-        raveled_data_no_groupby = raveled_data_no_groupby.drop(rowgroupby, axis=1) if rowgroupby is not None else raveled_data_no_groupby
+            id_vars = [x for x in [groupby, subgroupby, rowgroupby] if x is not None and not isinstance(x, list)]
+            raveled_data = group_values.melt(id_vars=id_vars, value_vars=cols, value_name='data_point')
+            raveled_data_no_groupby = group_values_no_groupby.melt(value_vars=cols, value_name='data_point')
         logging.info(f"Data raveled, shape: {raveled_data.shape}")
 
         #get the number of ycolumns by the number of unique groups
@@ -190,28 +178,18 @@ class PrismFile():
 
 
         #get the num subcolumns by the number of non-groupby columns
-        if subgroupby is not None and subgroupcols is not None:
-            raise ValueError('subgroupby and subgroupcols cannot both be specified')
-        elif subgroupby is None:
-            #if there is no subgroupby, then we look at subgroupcols
-            if subgroupcols is not None: 
-                
-                num_subcolumns = len(subgroupcols) #this is the number of subcolumns
-                name_subcolumns = subgroupcols #this is the name of the subcolumns
-                subgroupby_func = "col"
-                logging.info(f"Grouping subcolumns by columns: {subgroupcols}")
-                logging.info(f'num_subcolumns: {num_subcolumns}, name_subcolumns: {name_subcolumns}')
-            elif rowgroupcols is not None:
+        if subgroupby is None:
+            if rowgroupby is not None:
                 #if there is no subgroupby, then we look at rowgroupcols
                 #if these are present, then we likely be assigning the subcolumns sequentially
-                logging.info(f"Rowgroupcols present, subcolumns will be assigned sequentially")
-                name_subcolumns = group_values_no_groupby.index #this is the name of the subcolumns
-                num_subcolumns = len(group_values_no_groupby.index) #this is the number of subcolumns
+                logging.info(f"Rowgroupby present & no subgroupby, subcolumns will be assigned sequentially")
+                name_subcolumns = raveled_data_no_groupby.shape[0] #this is the name of the subcolumns
+                num_subcolumns = raveled_data_no_groupby.shape[0] #this is the number of subcolumns
                 subgroupby_func = 'row'
             else: #if there is no subgroupby or subgroupcols, then we just passed in the data
-                name_subcolumns = raveled_data_no_groupby['col'].unique() #this is the name of the subcolumns
+                name_subcolumns = raveled_data_no_groupby['variable'].unique() #this is the name of the subcolumns
                 num_subcolumns = len(name_subcolumns) #this is the number of subcolumns
-                subgroupby_func = "col"
+                subgroupby_func = 'variable'
                 logging.info(f"Grouping subcolumns sequentially")
                 logging.info(f'num_subcolumns: {num_subcolumns}, name_subcolumns: {name_subcolumns}')
         elif isinstance(subgroupby, str):
@@ -223,27 +201,25 @@ class PrismFile():
             subgroupby_func = subgroupby #this is the function to group by
             logging.info(f"Grouping subcolumns by labels: {subgroupby}")
             logging.info(f'num_subcolumns: {num_subcolumns}, name_subcolumns: {name_subcolumns}')
+        elif isinstance(subgroupby, list) or isinstance(subgroupby, np.ndarray):
+            num_subcolumns = len(subgroupby) #this is the number of subcolumns
+            name_subcolumns = subgroupby #this is the name of the subcolumns
+            subgroupby_func = 'variable'
+            logging.info(f"Grouping subcolumns by columns: {subgroupby}")
+            logging.info(f'num_subcolumns: {num_subcolumns}, name_subcolumns: {name_subcolumns}')
+            
         else:
             raise ValueError('subgroupby must be None, a string')
         
 
         #get the number of rows by the number of unique rowgroups
-        if rowgroupby is not None and rowgroupcols is not None:
-            raise ValueError('rowgroupby and rowgroupcols cannot both be specified')
-        elif rowgroupby is None:
-            if rowgroupcols is not None:
-                num_rows = len(rowgroupcols)
-                name_rows = rowgroupcols
-                rowgroupby_func = 'col'
-                seq_rows = False #not sequential
-                logging.info(f"Grouping rows by columns: {rowgroupcols}")
-            else:
-                rowgroupby_func = 'row'
-                name_rows = None #[f"Row {i}" for i in range(raveled_data_no_groupby.shape[0])]
-                num_rows = raveled_data_no_groupby.shape[0] #this is the number of rows
-                seq_rows = True
-                seq_rows_counter = {}
-                logging.info(f"Rows placed sequentially")
+        if rowgroupby is None:
+            rowgroupby_func = 'row'
+            name_rows = None #[f"Row {i}" for i in range(raveled_data_no_groupby.shape[0])]
+            num_rows = raveled_data_no_groupby.shape[0] #this is the number of rows
+            seq_rows = True
+            seq_rows_counter = {}
+            logging.info(f"Rows placed sequentially")
         elif isinstance(rowgroupby, str):
             raveled_data[rowgroupby] = raveled_data[rowgroupby].astype(str)
             num_rows = raveled_data[rowgroupby].unique().shape[0]
@@ -252,17 +228,23 @@ class PrismFile():
             seq_rows = False#not sequential
             logging.info(f"Grouping rows by labels: {rowgroupby}")
             logging.info(f'num_rows: {num_rows}, name_rows: {name_rows}')
+        elif isinstance(rowgroupby, list) or isinstance(rowgroupby, np.ndarray):
+            num_rows = len(rowgroupby)
+            name_rows = rowgroupby
+            rowgroupby_func = 'variable'
+            seq_rows = False #not sequential
+            logging.info(f"Grouping rows by columns: {rowgroupby}")
         else:  
             raise ValueError('Something went wrong with rowgroupby')
 
-        #get the number of groups
-        idxs_per_group = raveled_data.groupby([groupby, subgroupby_func, rowgroupby_func]).groups #this is the index of the subcolumns
-        suby_per_group = raveled_data.groupby([groupby, subgroupby_func]).groups #this is for counting the number of subcolumns per group
+        
         
         #warn the user if the subgroupby_func is a label, and rowgroupby_func is a label, then there should be only one data point per group
-        if (subgroupby_func != 'row' and subgroupby_func != 'col') and (rowgroupby_func != 'row' and rowgroupby_func != 'col'):
-            if np.any([len(x) > 1 for x in idxs_per_group.values()]):
-                logging.warning('If subgroupby_func and rowgroupby_func are both labels, then there should be only one data point per group')
+        if subgroupby_func not in ['row', 'col', 'variable'] and rowgroupby_func not in ['row', 'col', 'variable']:
+            grouped = raveled_data.groupby([groupby, subgroupby_func, rowgroupby_func]).size()
+            max_count = grouped.max()
+            if max_count > 1:
+                logging.warning(f"Max count of data points per group is {max_count}, there may be overlapping data points for group {group_name}. Consider using sequential assignment for rows or subcolumns.")    
             
         #make the table definition
         table_def = group_str_template['table_def'].replace('TABLE_NAME', group_name).replace('NUM_REPLICATES', str(num_subcolumns))
@@ -291,7 +273,9 @@ class PrismFile():
         
         #nestle the data points into nested dicts
         ycols_map = {} #this is a map of ycolumns to their subcolumns, and subcolumns to their data points
-        for ycol, subycol, row in idxs_per_group:
+        for row, data in raveled_data.iterrows():
+            ycol = data[groupby] if groupby is not None else group_name
+            subycol = data[subgroupby_func] if subgroupby_func not in ['row', 'col', 'variable'] else (data['variable'] if subgroupby_func == 'variable' else row)
             if ycol not in ycols_map: #if the ycol is not in the ycols_map
                 #make the ycolumn
                 ycolumn = group_str_template['ycolumn']
@@ -322,14 +306,14 @@ class PrismFile():
                     map_row = ET.fromstring(group_str_template['data_point'].replace('DATA_POINT', ''))
                     subcolumn.append(map_row)
                     subyrowmap[f"{subycol}_{row_name}"] = map_row #map the subcolumn to the row
-                ycols_map[ycol]['subyrowmap'] = subyrowmap #update the subymap
+                ycols_map[ycol]['subyrowmap'].update(subyrowmap) if 'subyrowmap' in ycols_map[ycol] else ycols_map[ycol].update({'subyrowmap': subyrowmap}) #update the subymap
             else:
                 subcolumn = subymap[f"{subycol}"]
 
             
             #now replace the empty data points with the actual data points
             #get the data points for this ycol, subycol, row
-            data_points = raveled_data.loc[idxs_per_group[(ycol, subycol, row)], 'data_point']
+            data_points = data[['data_point']].flatten() if isinstance(data[['data_point']], pd.DataFrame) else [data['data_point']]
             for data_point in data_points:
                 data_point = group_str_template['data_point'].replace('DATA_POINT', str(data_point))
                 data_point = ET.fromstring(data_point)
@@ -342,7 +326,7 @@ class PrismFile():
                     seq_rows_counter[f"{ycol}_{subycol}"] += 1
                     _row = row_idx
                 else:
-                    _row = row
+                    _row = data[rowgroupby_func] if rowgroupby_func not in ['row', 'col'] else name_rows[row]
                 subyrow_key = f"{subycol}_{_row}" #this is the key for the subyrowmap
                 if subyrow_key in ycols_map[ycol]['subyrowmap']:
                     #remove the empty data point

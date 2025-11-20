@@ -1,3 +1,4 @@
+
 from . import prism_writer
 print("Loaded basic libraries; importing QT")
 from PySide2.QtWidgets import (QApplication, QWidget, QFileDialog, QVBoxLayout,
@@ -8,6 +9,7 @@ from PySide2.QtCore import Qt, Signal
 import pandas as pd
 import copy
 import os
+logger = prism_writer.logging.getLogger(__name__)
 
 
 class MultiSelectPopup(QPushButton):
@@ -325,7 +327,7 @@ class PrismWriterGUI(QWidget):
         # Table name
         creation_layout.addWidget(QLabel("Table Name:"))
         self.group_table_name = QLineEdit("Group Table Name")
-        self.group_table_name.textChanged.connect(self.update_preview)
+        #self.group_table_name.textChanged.connect(self.update_preview)
         creation_layout.addWidget(self.group_table_name)
         
         # Create button
@@ -426,7 +428,42 @@ class PrismWriterGUI(QWidget):
                 if file_path.endswith('.csv'):
                     self.df = pd.read_csv(file_path)
                 else:
-                    self.df = pd.read_excel(file_path)
+                    # Excel file - check for multiple sheets
+                    excel_file = pd.ExcelFile(file_path)
+                    sheet_names = excel_file.sheet_names
+                    
+                    if len(sheet_names) > 1:
+                        # Show sheet selection dialog
+                        dialog = QDialog(self)
+                        dialog.setWindowTitle("Select Sheet")
+                        dialog.setModal(True)
+                        dialog.resize(300, 200)
+                        
+                        layout = QVBoxLayout(dialog)
+                        layout.addWidget(QLabel("Multiple sheets found. Select one:"))
+                        
+                        sheet_list = QListWidget()
+                        sheet_list.addItems(sheet_names)
+                        sheet_list.setCurrentRow(0)
+                        layout.addWidget(sheet_list)
+                        
+                        button_layout = QHBoxLayout()
+                        ok_button = QPushButton("OK")
+                        ok_button.clicked.connect(dialog.accept)
+                        cancel_button = QPushButton("Cancel")
+                        cancel_button.clicked.connect(dialog.reject)
+                        button_layout.addWidget(ok_button)
+                        button_layout.addWidget(cancel_button)
+                        layout.addLayout(button_layout)
+                        
+                        if dialog.exec_() == QDialog.Accepted:
+                            selected_sheet = sheet_list.currentItem().text()
+                            self.df = pd.read_excel(file_path, sheet_name=selected_sheet)
+                        else:
+                            return
+                    else:
+                        # Single sheet, load directly
+                        self.df = pd.read_excel(file_path)
                 
                 # Update UI
                 filename = os.path.basename(file_path)
@@ -692,23 +729,27 @@ class PrismWriterGUI(QWidget):
             preview += "Unable to estimate table dimensions\n"
         
         #generate a table preview using the prism_writer
-        #try:
-        # if data_cols is None or len(data_cols) == 0:
-        #     data_cols = [x for x in self.df.columns if x not in (main_group + sub_group + row_group)]
-        # if len(data_cols) > 20 :
-        #     data_cols = data_cols[:20]  # Limit to 20 columns for preview
-       
+        try:
+            if data_cols is None or len(data_cols) == 0:
+                logger.debug("No data columns selected, not rendering preview table")
+                return preview
+                #data_cols = [x for x in self.df.columns if x not in (main_group + sub_group + row_group)]
+            if len(data_cols) > 20 :
+                data_cols = data_cols[:20]  # Limit to 20 columns for preview
+        except:
+            pass
         self.prism_writer.make_group_table(
             group_name="__" + self.group_table_name.text().strip(),
-            group_values=self.df.sample(frac=0.5).head(), # sample for preview, since full df may be large
+            group_values=self.df, # sample for preview, since full df may be large
             groupby=main_group[0] if main_group else None,
             cols=data_cols if data_cols else None,
             subgroupcols=sub_group if len(sub_group) > 0 else None,
             subgroupby=sub_group[0] if len(sub_group) == 1 else None,
-            x=row_group if len(row_group) > 0 else None,
+            rowgroupcols=row_group if len(row_group) > 0 else None,
             rowgroupby=row_group[0] if len(row_group) == 1 else None
         )
-        #preview += f"Table Preview:\n{preview_table}\n"
+        
+
         #esssentially testing a data rountrip
 
         df_preview = self.prism_writer.to_dataframe("__" + self.group_table_name.text().strip())
@@ -773,50 +814,52 @@ class PrismWriterGUI(QWidget):
         
         try:
             # Get selections using new control types
-            main_group = self.get_selected_columns("main")[0]
+            main_group = self.get_selected_columns("main")
             sub_group = self.get_selected_columns("sub")
             row_group = self.get_selected_columns("row")
             col_group = self.get_selected_columns("data")
             
-            # Process selections according to the original logic
-            if len(sub_group) > 1:
-                sub_group_cols = copy.copy(sub_group)
-                sub_group_by = None
-            elif len(sub_group) == 1:
-                sub_group_cols = None
-                sub_group_by = sub_group[0]
-            else:
-                sub_group_cols = None
-                sub_group_by = None
-
-            if len(row_group) > 1:
-                row_group_cols = copy.copy(row_group)
-                row_group_by = None
-            elif len(row_group) == 1:
-                row_group_cols = None
-                row_group_by = row_group[0]
-            else:
-                row_group_cols = None
-                row_group_by = None
+            # Determine groupby parameter (main group column)
+            # Can be None, a string (single column), or stay as list if needed
+            groupby = main_group[0] if len(main_group) == 1 else (None if len(main_group) == 0 else main_group)
             
-            if len(col_group) > 1:
-                cols = col_group
-            elif len(col_group) == 1:
-                cols = col_group[0]
+            # Determine subgroupby parameter
+            # Can be None, a string (categorical column), or list of column names
+            if len(sub_group) == 0:
+                subgroupby = None
+            elif len(sub_group) == 1:
+                subgroupby = sub_group[0]
             else:
+                subgroupby = sub_group  # Pass as list for multiple columns
+            
+            # Determine rowgroupby parameter
+            # Can be None, a string (categorical column), or list of column names
+            if len(row_group) == 0:
+                rowgroupby = None
+            elif len(row_group) == 1:
+                rowgroupby = row_group[0]
+            else:
+                rowgroupby = row_group  # Pass as list for multiple columns
+            
+            # Determine cols parameter (data columns)
+            # Can be None (use all), a string (single column), or list
+            if len(col_group) == 0:
                 cols = None
+            elif len(col_group) == 1:
+                cols = [col_group[0]]  # Wrap single column in list for consistency
+            else:
+                cols = col_group
 
             # Create the table
             table_name = self.group_table_name.text().strip()
             self.prism_writer.make_group_table(
-                table_name,
-                self.df,
-                main_group,
+                group_name=table_name,
+                group_values=self.df,
+                groupby=groupby,
                 cols=cols,
-                subgroupcols=sub_group_cols,
-                rowgroupcols=row_group_cols,
-                subgroupby=sub_group_by,
-                rowgroupby=row_group_by
+                subgroupby=subgroupby,
+                rowgroupby=rowgroupby,
+                append=True
             )
 
             # Update UI

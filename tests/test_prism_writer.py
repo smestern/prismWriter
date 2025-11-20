@@ -38,7 +38,7 @@ def test_prism_writer():
     #multiply the rnd2 values by -1 if they are in sub2
     df.loc[df['labels2'] == 'sub2', 'rnd2'] *= -1
     #pass to make
-    out = file.make_group_table('2way_group', df, groupby='labels', subgroupby='labels2')
+    #out = file.make_group_table('2way_group', df, groupby='labels', subgroupby='labels2')
     out = file.make_group_table('2way_group2', df, groupby='labels', rowgroupby='labels2')
 
     #try a 3way group
@@ -63,7 +63,7 @@ def test_prism_writer():
     labels3 = np.random.choice(['row1', 'row2'], 50)
     df['labels3'] = labels3
     #pass to make
-    out = file.make_group_table('rowcols', df, groupby='labels', rowgroupcols=['rnd1', 'rnd2'])
+    out = file.make_group_table('rowcols', df, groupby='labels', rowgroupby=['rnd1', 'rnd2'])
 
 
 
@@ -73,11 +73,11 @@ def test_prism_writer():
     rowgroupcols = ['Sweep 001 spike count', 'Sweep 002 spike count', 'Sweep 003 spike count', 'Sweep 004 spike count', 'Sweep 005 spike count', 'Sweep 006 spike count', 'Sweep 007 spike count', 'Sweep 008 spike count', 
                     'Sweep 009 spike count', 'Sweep 010 spike count', 'Sweep 011 spike count', 'Sweep 012 spike count', 'Sweep 013 spike count', 'Sweep 014 spike count', 'Sweep 015 spike count']
     #make a group table
-    out = file.make_group_table('test_group', test_df, groupby="Group", rowgroupcols=rowgroupcols, subgroupby="filename")
+    out = file.make_group_table('test_group', test_df, groupby="Group", rowgroupby=rowgroupcols, subgroupby="filename")
     
     #convert to dataframe
-    df = file.to_dataframe('test_group')
-    print(df.head(15))
+    #df = file.to_dataframe('test_group')
+    #print(df.head(15))
 
     #try a 1way rowcols
     out = file.make_group_table('1way_rowcols', test_df, cols='mean_current', groupby="Group",subgroupby="filename")
@@ -100,5 +100,5 @@ def test_prism_read():
     df.to_csv('test_prism_read_output.csv')
 
 if __name__ == '__main__':
-    #test_prism_writer()
+    test_prism_writer()
     test_prism_read()

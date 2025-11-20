@@ -56,8 +56,24 @@ if uploaded_file is not None:
         if uploaded_file.name.endswith('.csv'):
             st.session_state.df = pd.read_csv(uploaded_file)
         else:
-            st.session_state.df = pd.read_excel(uploaded_file)
-        st.success(f"Loaded {uploaded_file.name} - {len(st.session_state.df)} rows")
+            # Excel file - check for multiple sheets
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheet_names = excel_file.sheet_names
+            
+            if len(sheet_names) > 1:
+                # Show sheet selector in sidebar
+                with st.sidebar:
+                    st.markdown("---")
+                    selected_sheet = st.selectbox(
+                        "Select Excel Sheet",
+                        options=sheet_names,
+                        key="sheet_selector"
+                    )
+                st.session_state.df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+                st.success(f"Loaded {uploaded_file.name} (Sheet: {selected_sheet}) - {len(st.session_state.df)} rows")
+            else:
+                st.session_state.df = pd.read_excel(uploaded_file)
+                st.success(f"Loaded {uploaded_file.name} - {len(st.session_state.df)} rows")
     except Exception as e:
         st.error(f"Error loading file: {str(e)}")
 
@@ -135,13 +151,11 @@ if st.session_state.df is not None:
             )
             if subgroupby == "None":
                 subgroupby = None
-            subgroupcols = None
         else:
-            subgroupcols = st.multiselect(
+            subgroupby = st.multiselect(
                 "Data columns for sub-groups",
                 options=numeric_cols,
             )
-            subgroupby = None
     
     with col3:
         st.markdown("**Row Groups**")
@@ -158,13 +172,11 @@ if st.session_state.df is not None:
             )
             if rowgroupby == "None":
                 rowgroupby = None
-            rowgroupcols = None
         else:
-            rowgroupcols = st.multiselect(
+            rowgroupby = st.multiselect(
                 "Data columns for row groups",
                 options=numeric_cols,
             )
-            rowgroupby = None
     
     # Data columns
     st.markdown("### Data Columns")
@@ -209,9 +221,8 @@ if st.session_state.df is not None:
                         groupby=main_group,
                         cols=data_cols,
                         subgroupby=subgroupby,
-                        subgroupcols=subgroupcols,
                         rowgroupby=rowgroupby,
-                        rowgroupcols=rowgroupcols
+                        append=True
                     )
                     
                     # Convert back to dataframe for preview
@@ -243,9 +254,8 @@ if st.session_state.df is not None:
                         groupby=main_group,
                         cols=data_cols,
                         subgroupby=subgroupby,
-                        subgroupcols=subgroupcols,
                         rowgroupby=rowgroupby,
-                        rowgroupcols=rowgroupcols
+                        append=True
                     )
                     
                     # Save to BytesIO
