@@ -6,10 +6,11 @@ textColor = "#262730"
 font = "sans serif"
 
 [server]
-headless = false
-port = 8501
-enableCORS = false
+maxUploadSize = 10
 enableXsrfProtection = true
 
 [browser]
 gatherUsageStats = false
+
+[runner]
+magicEnabled = false

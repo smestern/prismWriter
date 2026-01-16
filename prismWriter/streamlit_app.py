@@ -8,7 +8,12 @@ import pandas as pd
 import os
 import tempfile
 from io import BytesIO
-from prismWriter.prism_writer import PrismFile, load_prism_file
+
+# Lazy import to reduce initial memory footprint
+@st.cache_resource
+def get_prism_module():
+    from prismWriter.prism_writer import PrismFile, load_prism_file
+    return PrismFile, load_prism_file
 
 # Page configuration
 st.set_page_config(
@@ -84,6 +89,7 @@ if prism_upload is not None:
             tmp.write(prism_upload.read())
             tmp_path = tmp.name
         
+        PrismFile, load_prism_file = get_prism_module()
         st.session_state.prism_file = load_prism_file(tmp_path, backup=False)
         st.success(f"Loaded Prism file: {prism_upload.name}")
         
@@ -206,6 +212,7 @@ if st.session_state.df is not None:
             try:
                 with st.spinner("Generating preview..."):
                     # Create temporary PrismFile
+                    PrismFile, _ = get_prism_module()
                     temp_prism = PrismFile()
                     
                     # Get unique values for main group
@@ -245,6 +252,7 @@ if st.session_state.df is not None:
             try:
                 with st.spinner("Generating Prism file..."):
                     # Create PrismFile
+                    PrismFile, _ = get_prism_module()
                     prism_file = PrismFile()
                     
                     # Create table
