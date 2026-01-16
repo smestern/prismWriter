@@ -200,7 +200,7 @@ if st.session_state.df is not None:
     
     # Preview functionality
     if preview_btn:
-        if not data_cols:
+        if not data_cols or not rowgroupby or not subgroupby:
             st.warning("Please select at least one data column")
         else:
             try:
