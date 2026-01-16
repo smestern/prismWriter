@@ -2,19 +2,31 @@
 
 Python library and GUI for programmatically creating and manipulating GraphPad Prism (`.pzfx`) files. Convert pandas DataFrames into Prism's XML-based table format with complex grouping structures.
 
+**Version:** 1.0.0
+
 ## Features
 
 - Convert pandas DataFrames to GraphPad Prism format
 - Flexible grouping: main groups, sub-columns, row labels
-- Multiple interfaces: Python API, Qt GUI, and Web interface
+- Multiple interfaces: Python API, Qt GUI, and Streamlit Web interface
 - Load and modify existing `.pzfx` files
 - Validate table structure with preview functionality
+- Automatic backup creation when loading existing files
 
 ## Installation
 
 ```bash
 pip install -e .
 ```
+
+### Requirements
+
+- Python >= 3.7
+- numpy
+- pandas
+- PySide2 (for Qt GUI)
+- streamlit >= 1.28.0 (for web interface)
+- openpyxl (for Excel file support)
 
 ## Quick Start
 
@@ -24,8 +36,8 @@ pip install -e .
 from prismWriter.prism_writer import PrismFile
 import pandas as pd
 
-# Create a PrismFile
-pf = PrismFile()**
+# Create a new PrismFile
+pf = PrismFile()
 
 # Load your data
 df = pd.read_csv('data.csv')
@@ -51,15 +63,21 @@ The easiest way to use prismWriter:
 streamlit run prismWriter/streamlit_app.py
 ```
 
-Or use the provided launch scripts:
-- **Windows (CMD)**: `run_web.bat`
+Or use the provided launch script:
+- **Windows**: `run_web.bat`
+
+Or after installation:
+```bash
+prismwriter-web
+```
 
 Features:
-- Upload CSV/Excel files
-- Live data preview
-- Interactive configuration
-- Preview table structure
-- Direct download
+- Upload CSV/Excel files (with multi-sheet Excel support)
+- Live data preview with automatic column type detection
+- Interactive grouping configuration
+- Preview table structure before generating
+- Direct download of generated `.pzfx` files
+- Load and view existing Prism files
 
 ### Qt GUI
 
@@ -72,16 +90,31 @@ Or after installation:
 prismwriter-gui
 ```
 
-## Usage
+## API Reference
+
+### PrismFile Class
+
+```python
+pf = PrismFile(file=None)  # Create new or load existing file
+```
+
+**Methods:**
+- `load(file_path, backup=True)` - Load an existing Prism file
+- `make_group_table(group_name, group_values, groupby=None, cols=None, subgroupby=None, rowgroupby=None, append=True)` - Create a grouped table
+- `get_table_names()` - Get list of all table names
+- `to_dataframe(table_name)` - Convert a table to pandas DataFrame
+- `save(file_path)` - Save to file
+- `write(file_path, xml_declaration=True, encoding='utf-8', pretty_print=True)` - Write with options
+- `remove_table(table_name)` - Remove a table from the file
 
 ### Grouping Parameters
 
 - **`groupby`**: Main column grouping - creates separate Y-columns for each category
-- **`subgroupby`/`subgroupcols`**: Sub-columns within each Y-column (replicates)
-- **`rowgroupby`/`rowgroupcols`**: Row labels on the vertical axis
+- **`subgroupby`**: Sub-columns within each Y-column (string for column name, or list for data columns)
+- **`rowgroupby`**: Row labels on the vertical axis (string for column name, or list for data columns)
 - **`cols`**: Data columns to include
 
-**Note**: Use either column name (`subgroupby='condition'`) OR list of data columns (`subgroupcols=['col1', 'col2']`) - not both.
+**Note**: Use either column name (`subgroupby='condition'`) OR list of data columns (`subgroupby=['col1', 'col2']`) - not both.
 
 ### Example Data Structure
 
@@ -113,30 +146,39 @@ pf.save("treatment_data.pzfx")
 ## Loading Existing Files
 
 ```python
-from prismWriter.prism_writer import load_prism_file
+from prismWriter.prism_writer import PrismFile
 
-# Load existing Prism file
-pf = load_prism_file("existing.pzfx")
+# Load existing Prism file (creates automatic backup)
+pf = PrismFile()
+pf.load("existing.pzfx")
+
+# Or load directly in constructor
+pf = PrismFile(file="existing.pzfx")
 
 # Get table names
 tables = pf.get_table_names()
 print(f"Found tables: {tables}")
 
-# Convert to DataFrame
+# Convert table to DataFrame
 df = pf.to_dataframe("TableName")
 
 # Add new table
-pf.make_group_table(...)
+pf.make_group_table(
+    group_name="NewTable",
+    group_values=df,
+    groupby="category",
+    cols=["value"]
+)
 
-# Save
+# Save (use write() for more options)
 pf.save("modified.pzfx")
 ```
 
 ## Dependencies
 
-- **Core**: pandas, numpy, xml.etree.ElementTree
+- **Core**: pandas, numpy
 - **GUI**: PySide2 (Qt bindings)
-- **Web**: streamlit
+- **Web**: streamlit >= 1.28.0
 - **Files**: openpyxl for Excel support
 
 ## Project Structure
@@ -144,13 +186,15 @@ pf.save("modified.pzfx")
 ```
 prismWriter/
 ├── prismWriter/
+│   ├── __init__.py          # Package exports
 │   ├── prism_writer.py      # Core XML generation engine
-│   ├── gui.py               # Qt GUI wrapper
+│   ├── gui.py               # PySide2 Qt GUI wrapper
 │   ├── streamlit_app.py     # Streamlit web interface
 │   ├── prism_template2.pzfx # XML structure template
 │   └── schema/              # Prism XML schemas
 ├── tests/
 │   ├── test_prism_writer.py
+│   ├── test_gui.py
 │   └── test_data.csv
 ├── pyproject.toml
 └── README.md
@@ -167,9 +211,10 @@ pytest tests/
 ### Key Implementation Details
 
 - Uses `prism_template2.pzfx` as XML structure blueprint
-- Namespace: `{http://graphpad.com/prism/Prism.htm}`
-- "Raveling" strategy: transforms DataFrames into flat structure, then rebuilds into nested XML
-- Automatic backup files created when loading existing files
+- XML Namespace: `{http://graphpad.com/prism/Prism.htm}`
+- "Raveling" strategy: transforms DataFrames into flat structure via `melt()`, then rebuilds into nested XML hierarchy
+- Automatic backup files created as `{filename}.backup{timestamp}` when loading existing files
+- Logging enabled at INFO level for debugging table creation
 
 ## Known Limitations
 
