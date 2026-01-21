@@ -6,3 +6,4 @@ venv/
 test.pzfx*
 test_prism_read_output.csv
 *.csv
+dist/*

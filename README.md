@@ -100,7 +100,7 @@ pf = PrismFile(file=None)  # Create new or load existing file
 
 **Methods:**
 - `load(file_path, backup=True)` - Load an existing Prism file
-- `make_group_table(group_name, group_values, groupby=None, cols=None, subgroupby=None, rowgroupby=None, append=True)` - Create a grouped table
+- `smake_group_table(group_name, group_values, groupby=None, cols=None, subgroupby=None, rowgroupby=None, append=True)` - Create a grouped table
 - `get_table_names()` - Get list of all table names
 - `to_dataframe(table_name)` - Convert a table to pandas DataFrame
 - `save(file_path)` - Save to file
