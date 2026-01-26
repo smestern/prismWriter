@@ -5,6 +5,7 @@ A simple web interface for creating GraphPad Prism files from CSV/Excel data
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import os
 import tempfile
 from io import BytesIO
@@ -186,12 +187,17 @@ if st.session_state.df is not None:
     
     # Data columns
     st.markdown("### Data Columns")
-    data_cols = st.multiselect(
-        "Select columns to include as data",
-        options=numeric_cols,
-        default=numeric_cols if len(numeric_cols) <= 5 else numeric_cols[:5],
-        help="Numeric columns that contain the actual data values"
-    )
+    #grey out if the user selected subgroupby or rowgroupby as data columns
+    if (sub_group_option == "By data columns" and len(subgroupby) > 0) or (row_group_option == "By data columns" and len(rowgroupby) > 0):
+        st.info("Data columns selection is disabled when using data columns for sub-groups or row groups")
+        data_cols = []
+    else:
+        data_cols = st.multiselect(
+            "Select columns to include as data",
+            options=numeric_cols,
+            default=numeric_cols[0:1] if numeric_cols else [],
+            help="Numeric columns that contain the actual data values"
+        )
     
     # Preview and Generate
     st.markdown("---")
@@ -206,7 +212,7 @@ if st.session_state.df is not None:
     
     # Preview functionality
     if preview_btn:
-        if not data_cols or not rowgroupby or not subgroupby:
+        if not np.any([data_cols, rowgroupby, subgroupby]):
             st.warning("Please select at least one data column")
         else:
             try:
@@ -226,9 +232,9 @@ if st.session_state.df is not None:
                         group_name=f"__{table_name}",
                         group_values=df,
                         groupby=main_group,
-                        cols=data_cols,
-                        subgroupby=subgroupby,
-                        rowgroupby=rowgroupby,
+                        cols=data_cols if len(data_cols) > 0 else None,
+                        subgroupby=subgroupby if len(subgroupby) > 0 else None,
+                        rowgroupby=rowgroupby if len(rowgroupby) > 0 else None,
                         append=True
                     )
                     
@@ -246,7 +252,7 @@ if st.session_state.df is not None:
     
     # Generate file
     if generate_btn:
-        if not data_cols:
+        if not np.any([data_cols, rowgroupby, subgroupby]):
             st.warning("Please select at least one data column")
         else:
             try:
@@ -260,9 +266,9 @@ if st.session_state.df is not None:
                         group_name=table_name,
                         group_values=df,
                         groupby=main_group,
-                        cols=data_cols,
-                        subgroupby=subgroupby,
-                        rowgroupby=rowgroupby,
+                        cols=data_cols if len(data_cols) > 0 else None,
+                        subgroupby=subgroupby if len(subgroupby) > 0 else None,
+                        rowgroupby=rowgroupby if len(rowgroupby) > 0 else None,
                         append=True
                     )
                     

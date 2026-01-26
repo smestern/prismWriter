@@ -230,6 +230,11 @@ pytest tests/
 - Template system hardcoded to specific Prism XML schema version
 - No undo functionality - backup files are the safety net
 
+## Roadmap
+
+- Add support for other table types (X-Y, nested, Multi var?)
+- Add support for `.prism` loading (maybe saving?)
+
 ## License
 
 MIT License
