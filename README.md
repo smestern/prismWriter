@@ -24,9 +24,16 @@ pip install -e .
 - Python >= 3.7
 - numpy
 - pandas
-- PySide2 (for Qt GUI)
-- streamlit >= 1.28.0 (for web interface)
 - openpyxl (for Excel file support)
+- PySide2 (for Qt GUI) [optional]
+- streamlit >= 1.28.0 (for web interface) [optional]
+
+
+### See Also:
+
+- https://github.com/Yue-Jiang/pypzfx - Another python package with similar functionality
+- https://github.com/Biomiha/prism2R - R package for reading .prism (newer) files
+- https://github.com/yue-jiang/pzfx - R package for reading .pzfx files
 
 ## Quick Start
 
