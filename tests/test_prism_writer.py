@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 
+STABLE = True  #set to True for stable releases, False for development versions
 #get the local path
 local_path = os.path.dirname(os.path.abspath(__file__))
 test_data_path = os.path.join(local_path, 'test_data.csv')
@@ -98,13 +99,14 @@ def test_prism_read():
     df = file.to_dataframe('test_group') #convert to dataframe
     print(df.head(15)) #print first 15 rows
     #save the dataframe as a pickle for automated testing (only done on stable releases)
-    df.to_pickle('test_prism_read_output.pkl')
+    if STABLE:
+        df.to_pickle('./tests/test_prism_read_output_stable.pkl')
     #test the dataframes
     df_stable = pd.read_pickle(os.path.join(local_path, 'test_prism_read_output_stable.pkl'))
     pd.testing.assert_frame_equal(df, df_stable)
 
     #save to csv for manual checking
-    df.to_csv('test_prism_read_output.csv') #save to csv for manual checking
+    df.to_csv('./tests/test_prism_read_output.csv') #save to csv for manual checking
 
 if __name__ == '__main__':
     test_prism_writer()
