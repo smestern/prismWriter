@@ -7,7 +7,7 @@ Python library and GUI for programmatically creating and manipulating GraphPad P
 
 ### Core Components
 - **`prism_writer.py`**: Core XML generation engine and PrismFile class
-- **`prism_writer_gui.py`**: PySide2-based GUI wrapper with live preview
+- **`prism_writer_gui.py`**: PySide6-based GUI wrapper with live preview
 - **Template System**: Uses `prism_template2.pzfx` as XML structure blueprint
 
 ### Key Data Flow
@@ -52,7 +52,7 @@ Replace with `.replace('COLUMN_TITLE', actual_value)` before `ET.fromstring()`.
 
 ## Dependencies
 - **Core**: pandas, numpy, xml.etree.ElementTree
-- **GUI**: PySide2 (Qt bindings)
+- **GUI**: PySide6 (Qt bindings)
 - **Files**: openpyxl/xlrd for Excel support (pandas backends)
 
 Run GUI: `python prism_writer_gui.py` (entry point at bottom of file)

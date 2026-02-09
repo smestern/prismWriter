@@ -36,13 +36,13 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = [
-    "PySide2>=5.15",
+    "PySide6>=6.5",
 ]
 web = [
     "streamlit>=1.20",
 ]
 all = [
-    "PySide2>=5.15",
+    "PySide6>=6.5",
     "streamlit>=1.20",
 ]
 dev = [

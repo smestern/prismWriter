@@ -25,7 +25,7 @@ pip install -e .
 - numpy
 - pandas
 - openpyxl (for Excel file support)
-- PySide2 (for Qt GUI) [optional]
+- PySide6 (for Qt GUI) [optional]
 - streamlit >= 1.28.0 (for web interface) [optional]
 
 
@@ -184,7 +184,7 @@ pf.save("modified.pzfx")
 ## Dependencies
 
 - **Core**: pandas, numpy
-- **GUI**: PySide2 (Qt bindings)
+- **GUI**: PySide6 (Qt bindings)
 - **Web**: streamlit >= 1.28.0
 - **Files**: openpyxl for Excel support
 
@@ -195,7 +195,7 @@ prismWriter/
 ├── prismWriter/
 │   ├── __init__.py          # Package exports
 │   ├── prism_writer.py      # Core XML generation engine
-│   ├── gui.py               # PySide2 Qt GUI wrapper
+│   ├── gui.py               # PySide6 Qt GUI wrapper
 │   ├── streamlit_app.py     # Streamlit web interface
 │   ├── prism_template2.pzfx # XML structure template
 │   └── schema/              # Prism XML schemas

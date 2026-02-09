@@ -1,11 +1,11 @@
 
 from . import prism_writer
 print("Loaded basic libraries; importing QT")
-from PySide2.QtWidgets import (QApplication, QWidget, QFileDialog, QVBoxLayout,
+from PySide6.QtWidgets import (QApplication, QWidget, QFileDialog, QVBoxLayout,
     QHBoxLayout, QPushButton, QListWidget, QLabel,
     QLineEdit, QGroupBox, QTextEdit, QTableWidget, QTableWidgetItem,
     QSplitter, QFrame, QComboBox, QDialog, QCheckBox, QScrollArea)
-from PySide2.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal
 import pandas as pd
 import copy
 import os
@@ -99,7 +99,7 @@ class MultiSelectPopup(QPushButton):
         
         layout.addLayout(button_layout)
         
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec() == QDialog.Accepted:
             # Update selection
             self.selected_items = [cb.text() for cb in checkboxes if cb.isChecked()]
             self.update_button_text()
@@ -456,7 +456,7 @@ class PrismWriterGUI(QWidget):
                         button_layout.addWidget(cancel_button)
                         layout.addLayout(button_layout)
                         
-                        if dialog.exec_() == QDialog.Accepted:
+                        if dialog.exec() == QDialog.Accepted:
                             selected_sheet = sheet_list.currentItem().text()
                             self.df = pd.read_excel(file_path, sheet_name=selected_sheet)
                         else:
@@ -941,7 +941,7 @@ def main():
     # Create and show GUI
     window = PrismWriterGUI()
     window.show()
-    app.exec_()
+    app.exec()
     
 
 
