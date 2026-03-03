@@ -440,7 +440,10 @@ class PrismFile():
 
         #convert to dataframe
         df = pd.DataFrame.from_dict(data)
-        df = df.pivot_table(index='row', columns=['ycol', 'subycol'], values='data_point')
+        #in later pandas we have to force ycol, subycol to be strs
+        df['ycol'] = df['ycol'].astype(str)
+        df['subycol'] = df['subycol'].astype(str)
+        df = df.pivot(index='row', columns=['ycol', 'subycol'], values='data_point')
         return df
 
     def get_table_names(self):

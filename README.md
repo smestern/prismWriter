@@ -2,7 +2,7 @@
 
 Python library and GUI for programmatically creating and manipulating GraphPad Prism (`.pzfx`) files. Convert pandas DataFrames into Prism's XML-based table format with complex grouping structures.
 
-**Version:** 1.0.0
+**Version:** 1.5.1
 
 ## Features
 
@@ -21,7 +21,7 @@ pip install -e .
 
 ### Requirements
 
-- Python >= 3.7
+- Python >= 3.11
 - numpy
 - pandas
 - openpyxl (for Excel file support)
