@@ -42,8 +42,7 @@ web = [
     "streamlit>=1.20",
 ]
 all = [
-    "PySide6>=6.5",
-    "streamlit>=1.20",
+    "prismWriter[gui, web]"
 ]
 dev = [
     "pytest>=7.0",
@@ -52,10 +51,12 @@ dev = [
     "flake8",
     "build",
     "twine",
+    "prismWriter[gui, web]",
 ]
 
 [project.scripts]
 prismwriter-gui = "prismWriter.gui:main"
+prismwriter-web = "prismWriter.web:main"
 
 [project.urls]
 Homepage = "https://github.com/smestern/prismWriter"

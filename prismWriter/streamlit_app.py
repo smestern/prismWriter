@@ -24,6 +24,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+def _check_input(input:list) -> bool:
+    """Helper function to check if any of the inputs are non-empty"""
+    res = []
+    for x in input:
+        if x is not None:
+            if isinstance(x, list):
+                res.append(len(x) > 0)
+            elif isinstance(x, str):
+                res.append(len(x.strip()) > 0)
+            else:
+                res.append(True)
+        else:
+            res.append(False)
+    return np.any(res)
+
+
 # Title and description
 st.title("prismWriter - Web Interface")
 st.markdown("""
@@ -208,11 +224,15 @@ if st.session_state.df is not None:
         preview_btn = st.button("Preview Table", use_container_width=True)
     
     with col2:
-        generate_btn = st.button("Generate Prism File", type="primary", use_container_width=True)
+        add_table_btn = st.button("Add Table to Prism File", type="primary", use_container_width=True)
+
+    with col3:
+        generate_btn = st.button("Generate Prism File", type="tertiary", use_container_width=True)
+
     
     # Preview functionality
     if preview_btn:
-        if not np.any([data_cols, rowgroupby, subgroupby]):
+        if _check_input([data_cols, rowgroupby, subgroupby]) == False:
             st.warning("Please select at least one data column")
         else:
             try:
@@ -249,17 +269,51 @@ if st.session_state.df is not None:
             except Exception as e:
                 st.error(f"Error generating preview: {str(e)}")
                 st.exception(e)
+    if add_table_btn:
+        if _check_input([data_cols, rowgroupby, subgroupby]) == False:
+            st.warning("Please select at least one data column")
+        else:
+            try:
+                with st.spinner("Adding table to Prism file..."):
+                    # Create PrismFile if not already created
+                    if st.session_state.prism_file is None:
+                        PrismFile, _ = get_prism_module()
+                        prism_file = PrismFile()
+                        st.session_state.prism_file = prism_file
+                    else:
+                        prism_file = st.session_state.prism_file
+                    
+                    # Create table
+                    prism_file.make_group_table(
+                        group_name=table_name,
+                        group_values=df,
+                        groupby=main_group,
+                        cols=data_cols if len(data_cols) > 0 else None,
+                        subgroupby=subgroupby if len(subgroupby) > 0 else None,
+                        rowgroupby=rowgroupby if len(rowgroupby) > 0 else None,
+                        append=True
+                    )
+                    
+                    st.success(f"Table '{table_name}' added to Prism file! You can add more tables or generate the file.")
+                    
+            except Exception as e:
+                st.error(f"Error adding table: {str(e)}")
+                st.exception(e)
     
     # Generate file
     if generate_btn:
-        if not np.any([data_cols, rowgroupby, subgroupby]):
+        if _check_input([data_cols, rowgroupby, subgroupby]) == False:
             st.warning("Please select at least one data column")
         else:
             try:
                 with st.spinner("Generating Prism file..."):
-                    # Create PrismFile
-                    PrismFile, _ = get_prism_module()
-                    prism_file = PrismFile()
+                    # Create PrismFile if not already created
+                    if st.session_state.prism_file is None:
+                        PrismFile, _ = get_prism_module()
+                        prism_file = PrismFile()
+                        st.session_state.prism_file = prism_file
+                    else:
+                        prism_file = st.session_state.prism_file
                     
                     # Create table
                     prism_file.make_group_table(
